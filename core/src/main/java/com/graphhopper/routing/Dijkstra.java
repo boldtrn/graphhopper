@@ -17,11 +17,6 @@
  */
 package com.graphhopper.routing;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import java.util.PriorityQueue;
-
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.TraversalMode;
 import com.graphhopper.routing.util.Weighting;
@@ -29,6 +24,10 @@ import com.graphhopper.storage.EdgeEntry;
 import com.graphhopper.storage.Graph;
 import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
+
+import java.util.PriorityQueue;
 
 /**
  * Implements a single source shortest path algorithm
@@ -81,6 +80,12 @@ public class Dijkstra extends AbstractRoutingAlgorithm
 
             int startNode = currEdge.adjNode;
             EdgeIterator iter = explorer.setBaseNode(startNode);
+
+            // Worsen already visited edge
+            if(alreadyVisited(currEdge.edge)){
+                currEdge.weight = currEdge.weight*ALREADY_VISITED_WEIGHT_MULTIPLICATOR;
+            }
+
             while (iter.next())
             {
                 if (!accept(iter, currEdge.edge))

@@ -17,27 +17,29 @@
  */
 package com.graphhopper.routing.util;
 
+import com.graphhopper.routing.Path;
 import com.graphhopper.util.EdgeIteratorState;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
 /**
- * This EdgeFilter accepts each edge only once.
- *
  * @author robin
  */
 public class AlreadyVisitedEdges {
 
     protected final TIntSet visitedEdges = new TIntHashSet();
 
+    public void addVisitedEdges(Path path){
+        for (EdgeIteratorState edge: path.calcEdges()) {
+            visitedEdges.add(edge.getEdge());
+        }
+    }
+
     public final boolean alreadyVisited(EdgeIteratorState iter) {
         return alreadyVisited(iter.getEdge());
     }
 
     public final boolean alreadyVisited(int edgeId){
-        if (visitedEdges.contains(edgeId)) {
-                return true;
-        }
-        return false;
+        return visitedEdges.contains(edgeId);
     }
 }

@@ -88,7 +88,7 @@ public class PrepareRoutingSubnetworks
         markNodesRemovedIfUnreachable();
 
         logger.info("optimize to remove subnetworks (" + subnetworks + "), "
-                + "unvisited-dead-end-nodes (" + unvisitedDeadEnds + "), "
+                + "alreadyVisited-dead-end-nodes (" + unvisitedDeadEnds + "), "
                 + "maxEdges/node (" + maxEdgesPerNode.get() + ")");
         ghStorage.optimize();
     }

@@ -110,7 +110,7 @@ public class PrepareRoutingSubnetworksTest
 
         // start is at 0 => large network
         assertEquals(Helper.createTList(0, 7, 3, 13, 5), components.get(0));
-        // next smallest and unvisited node is 1 => big network
+        // next smallest and alreadyVisited node is 1 => big network
         assertEquals(Helper.createTList(1, 8, 4, 2, 11, 12, 9, 15), components.get(1));
         assertEquals(Helper.createTList(6, 14, 10), components.get(2));
     }

@@ -1083,11 +1083,13 @@ public class GraphHopper implements GraphHopperAPI
         QueryResult fromQResult = qResults.get(0);
 
         double weightLimit = request.getHints().getDouble("defaultWeightLimit", defaultWeightLimit);
-        String algoStr = request.getAlgorithm().isEmpty() ? AlgorithmOptions.DIJKSTRA_BI : request.getAlgorithm();
+        String algoStr = request.getAlgorithm().isEmpty() ? AlgorithmOptions.DIJKSTRA : request.getAlgorithm();
         AlgorithmOptions algoOpts = AlgorithmOptions.start().
                 algorithm(algoStr).traversalMode(tMode).flagEncoder(encoder).weighting(weighting).
                 hints(request.getHints()).
                 build();
+
+        AlreadyVisitedEdges alreadyVisitedEdges = new AlreadyVisitedEdges();
 
         boolean viaTurnPenalty = request.getHints().getBool("pass_through", false);
         for (int placeIndex = 1; placeIndex < points.size(); placeIndex++)
@@ -1111,6 +1113,11 @@ public class GraphHopper implements GraphHopperAPI
             sw = new StopWatch().start();
             RoutingAlgorithm algo = tmpAlgoFactory.createAlgo(queryGraph, algoOpts);
             algo.setWeightLimit(weightLimit);
+
+            if(algo instanceof AbstractRoutingAlgorithm){
+                ((AbstractRoutingAlgorithm) algo).setAlreadyVisitedEdges(alreadyVisitedEdges);
+            }
+
             debug += ", algoInit:" + sw.stop().getSeconds() + "s";
 
             sw = new StopWatch().start();
@@ -1118,6 +1125,7 @@ public class GraphHopper implements GraphHopperAPI
             if (path.getTime() < 0)
                 throw new RuntimeException("Time was negative. Please report as bug and include:" + request);
 
+            alreadyVisitedEdges.addVisitedEdges(path);
             paths.add(path);
             debug += ", " + algo.getName() + "-routing:" + sw.stop().getSeconds() + "s, " + path.getDebugInfo();
 

@@ -31,6 +31,7 @@ import com.graphhopper.util.EdgeIteratorState;
 public abstract class AbstractRoutingAlgorithm implements RoutingAlgorithm
 {
     private EdgeFilter additionalEdgeFilter;
+    private AlreadyVisitedEdges alreadyVisitedEdges;
     protected final Graph graph;
     protected NodeAccess nodeAccess;
     protected EdgeExplorer inEdgeExplorer;
@@ -40,6 +41,8 @@ public abstract class AbstractRoutingAlgorithm implements RoutingAlgorithm
     protected final TraversalMode traversalMode;
     protected double weightLimit = Double.MAX_VALUE;
     private boolean alreadyRun;
+    protected static int ALREADY_VISITED_WEIGHT_MULTIPLICATOR = 3;
+
 
     /**
      * @param graph specifies the graph where this algorithm will run on
@@ -70,6 +73,12 @@ public abstract class AbstractRoutingAlgorithm implements RoutingAlgorithm
         return this;
     }
 
+    public RoutingAlgorithm setAlreadyVisitedEdges(AlreadyVisitedEdges alreadyVisitedFilter )
+    {
+        this.alreadyVisitedEdges = alreadyVisitedFilter;
+        return this;
+    }
+
     protected boolean accept( EdgeIterator iter, int prevOrNextEdgeId )
     {
         if (!traversalMode.hasUTurnSupport() && iter.getEdge() == prevOrNextEdgeId)
@@ -78,8 +87,13 @@ public abstract class AbstractRoutingAlgorithm implements RoutingAlgorithm
         return additionalEdgeFilter == null || additionalEdgeFilter.accept(iter);
     }
 
+    protected boolean alreadyVisited(int edgeId) {
+        return alreadyVisitedEdges != null && alreadyVisitedEdges.alreadyVisited(edgeId);
+    }
+
     protected void updateBestPath( EdgeIteratorState edgeState, EdgeEntry bestEdgeEntry, int traversalId )
     {
+
     }
 
     protected void checkAlreadyRun()
