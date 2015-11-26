@@ -24,12 +24,14 @@ import com.graphhopper.storage.index.LocationIndexTree;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.*;
 import gnu.trove.list.TIntList;
-import java.util.*;
-
-import static org.junit.Assert.*;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Peter Karich
@@ -85,6 +87,63 @@ public abstract class AbstractRoutingAlgorithmTester
         Path p = algo.calcPath(0, 7);
         assertEquals(p.toString(), Helper.createTList(0, 4, 5, 7), p.calcNodes());
         assertEquals(p.toString(), 62.1, p.getDistance(), .1);
+    }
+
+    @Test
+    public void testUniquePath()
+    {
+        if (!(this instanceof DijkstraTest) && !(this instanceof DijkstraBidirectionRefTest))
+        {
+            return;
+        }
+
+        // Make already visited edges extremely expensive, so they are not taken
+        AbstractRoutingAlgorithm.ALREADY_VISITED_WEIGHT_MULTIPLICATOR = 100;
+
+        GraphHopperStorage ghStorage = createTestStorage();
+
+        Path to;
+        Path backUnique;
+        Path backNonUnique;
+
+        RoutingAlgorithm algo = createAlgo(ghStorage);
+        to = algo.calcPath(0, 7);
+
+        algo = createAlgo(ghStorage);
+        backNonUnique = algo.calcPath(7, 0);
+
+        AlreadyVisitedEdges alreadyVisitedEdges = new AlreadyVisitedEdges();
+        alreadyVisitedEdges.addVisitedEdges(to);
+
+        algo = createAlgo(ghStorage);
+        if (algo instanceof AbstractRoutingAlgorithm)
+        {
+            ((AbstractRoutingAlgorithm) algo).setAlreadyVisitedEdges(alreadyVisitedEdges);
+        }
+        backUnique = algo.calcPath(7, 0);
+
+        List<EdgeIteratorState> toEdges = to.calcEdges();
+        List<EdgeIteratorState> backNonUniqueEdges = backNonUnique.calcEdges();
+        List<EdgeIteratorState> backUniqueEdges = backUnique.calcEdges();
+
+        for (EdgeIteratorState edge : toEdges)
+        {
+            boolean nonUniqueContains = false;
+            boolean uniqueContains = false;
+
+            for (EdgeIteratorState nuEdge : backNonUniqueEdges)
+            {
+                if (edge.getEdge() == nuEdge.getEdge())
+                    nonUniqueContains = true;
+            }
+            for (EdgeIteratorState uEdge : backUniqueEdges)
+            {
+                if (edge.getEdge() == uEdge.getEdge())
+                    uniqueContains = true;
+            }
+            assertTrue("Back nonUnique Path is not equal to toPath", nonUniqueContains);
+            assertFalse("Back unique Path is equal to toPath", uniqueContains);
+        }
     }
 
     @Test

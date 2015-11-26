@@ -17,11 +17,6 @@
  */
 package com.graphhopper.routing;
 
-import gnu.trove.map.TIntObjectMap;
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import java.util.PriorityQueue;
-
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.routing.util.TraversalMode;
 import com.graphhopper.routing.util.Weighting;
@@ -31,6 +26,10 @@ import com.graphhopper.util.EdgeExplorer;
 import com.graphhopper.util.EdgeIterator;
 import com.graphhopper.util.EdgeIteratorState;
 import com.graphhopper.util.GHUtility;
+import gnu.trove.map.TIntObjectMap;
+import gnu.trove.map.hash.TIntObjectHashMap;
+
+import java.util.PriorityQueue;
 
 /**
  * Calculates best path in bidirectional way.
@@ -192,7 +191,12 @@ public class DijkstraBidirectionRef extends AbstractBidirAlgo
 
     void fillEdges( EdgeEntry currEdge, PriorityQueue<EdgeEntry> prioQueue,
                     TIntObjectMap<EdgeEntry> shortestWeightMap, EdgeExplorer explorer, boolean reverse )
-    {        
+    {
+        // Worsen already visited edge
+        if(alreadyVisited(currEdge.edge)){
+            currEdge.weight = currEdge.weight*ALREADY_VISITED_WEIGHT_MULTIPLICATOR;
+        }
+
         EdgeIterator iter = explorer.setBaseNode(currEdge.adjNode);
         while (iter.next())
         {
