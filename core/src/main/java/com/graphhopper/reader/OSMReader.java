@@ -311,7 +311,8 @@ public class OSMReader implements DataReader
     private void areaPreprocessing( File osmFile )
     {
         logger.info("Starting Preprocessing of MapTiles");
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
+        long intermediateTime;
 
         OSMInputFile in = null;
         try
@@ -325,14 +326,22 @@ public class OSMReader implements DataReader
 
                 if (item.isType(OSMElement.NODE))
                 {
+                    intermediateTime = System.nanoTime();
                     areaProcessor.collectNodeData((OSMNode) item);
+                    long stopTime = System.nanoTime();
+                    long elapsedTime = stopTime - intermediateTime;
+                    logger.info("Collect Node Data, took:" + elapsedTime);
                 }
                 if (item.isType(OSMElement.WAY))
                 {
                     if (wayStart)
                     {
                         wayStart = false;
+                        intermediateTime = System.nanoTime();
                         areaProcessor.initMapFill();
+                        long stopTime = System.nanoTime();
+                        long elapsedTime = stopTime - intermediateTime;
+                        logger.info("Init Map Fill:" + elapsedTime);
                         logger.info("Landuse max tiles: " + nf(areaProcessor.getMaxTiles()));
                         logger.info("Landuse map initial tile capacity: " + nf(areaProcessor.landuseMap.capacity()));
 
@@ -475,7 +484,7 @@ public class OSMReader implements DataReader
         String spatialSurround = "";
         if (useLanduse && landuseCases.size() > 0)
         {
-            long startTime = System.currentTimeMillis();
+            long startTime = System.nanoTime();
             String waySurroundFirst = areaProcessor.getUsage(firstLat, firstLon);
             String waySurroundLast = areaProcessor.getUsage(lastLat, lastLon);
             if (!waySurroundFirst.isEmpty())
@@ -488,7 +497,7 @@ public class OSMReader implements DataReader
             }
 
             if(counter <10){
-                long stopTime = System.currentTimeMillis();
+                long stopTime = System.nanoTime();
                 long elapsedTime = stopTime - startTime;
                 logger.info("Time for looking up one Street: "+elapsedTime);
                 counter++;
