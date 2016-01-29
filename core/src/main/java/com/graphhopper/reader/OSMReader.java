@@ -317,6 +317,9 @@ public class OSMReader implements DataReader
         long startTime = System.nanoTime();
         long intermediateTime;
 
+        int tmpWayCounter = 0;
+        int tmpNodeCounter = 0;
+
         OSMInputFile in = null;
         try
         {
@@ -329,7 +332,14 @@ public class OSMReader implements DataReader
 
                 if (item.isType(OSMElement.NODE))
                 {
+                    intermediateTime = System.nanoTime();
                     areaProcessor.collectNodeData((OSMNode) item);
+                    if(++tmpNodeCounter % 5000000 == 0){
+                        long stopTime = System.nanoTime();
+                        long elapsedTime = stopTime - intermediateTime;
+                        logger.info("Collect Node:" + elapsedTime);
+
+                    }
                 }
                 if (item.isType(OSMElement.WAY))
                 {
@@ -346,7 +356,14 @@ public class OSMReader implements DataReader
 
                     } else
                     {
+                        intermediateTime = System.nanoTime();
                         areaProcessor.addPolygon((OSMWay) item);
+                        if(++tmpWayCounter % 5000000 == 0){
+                            long stopTime = System.nanoTime();
+                            long elapsedTime = stopTime - intermediateTime;
+                            logger.info("Collect Node:" + elapsedTime);
+
+                        }
                     }
                 }
                 if (item.isType(OSMElement.RELATION))
@@ -495,11 +512,11 @@ public class OSMReader implements DataReader
                 spatialSurround += waySurroundLast;
             }
 
-            if(counter <10){
+            if(++counter % 5000000 == 0){
                 long stopTime = System.nanoTime();
                 long elapsedTime = stopTime - startTime;
                 logger.info("Time for looking up one Street: "+elapsedTime);
-                counter++;
+
             }
         }
         way.setTag("spatial_surround", spatialSurround);
