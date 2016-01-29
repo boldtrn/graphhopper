@@ -166,12 +166,16 @@ public class OSMReader implements DataReader
         preProcess(osmFile);
         sw1.stop();
 
+
         StopWatch sw3 = new StopWatch().start();
+        /*
         if (useLanduse && landuseCases.size() > 0)
         {
             areaPreprocessing(osmFile);
         }
+        */
         sw3.stop();
+
 
         StopWatch sw2 = new StopWatch().start();
         writeOsm2Graph(osmFile);
@@ -243,6 +247,11 @@ public class OSMReader implements DataReader
                     }
 
                 }
+
+                if (useLanduse && landuseCases.size() > 0)
+                {
+                    areaPreProcessingLight(item);
+                }
             }
         } catch (Exception ex)
         {
@@ -303,6 +312,33 @@ public class OSMReader implements DataReader
         }
 
         return encodingManager.acceptWay(item) > 0;
+    }
+
+    boolean wayStart = true;
+
+    private void areaPreProcessingLight(final OSMElement item){
+        if (item.isType(OSMElement.NODE))
+        {
+            areaProcessor.collectNodeData((OSMNode) item);
+        }
+        if (item.isType(OSMElement.WAY))
+        {
+            if (wayStart)
+            {
+                wayStart = false;
+                long intermediateTime = System.nanoTime();
+                areaProcessor.initMapFill();
+                long stopTime = System.nanoTime();
+                long elapsedTime = stopTime - intermediateTime;
+                logger.info("Init Map Fill:" + elapsedTime);
+                logger.info("Landuse max tiles: " + nf(areaProcessor.getMaxTiles()));
+                logger.info("Landuse map initial tile capacity: " + nf(areaProcessor.landuseMap.capacity()));
+
+            } else
+            {
+                areaProcessor.addPolygon((OSMWay) item);
+            }
+        }
     }
 
     /**
