@@ -326,11 +326,7 @@ public class OSMReader implements DataReader
 
                 if (item.isType(OSMElement.NODE))
                 {
-                    intermediateTime = System.nanoTime();
                     areaProcessor.collectNodeData((OSMNode) item);
-                    long stopTime = System.nanoTime();
-                    long elapsedTime = stopTime - intermediateTime;
-                    logger.info("Collect Node Data, took:" + elapsedTime);
                 }
                 if (item.isType(OSMElement.WAY))
                 {
