@@ -310,6 +310,9 @@ public class OSMReader implements DataReader
      */
     private void areaPreprocessing( File osmFile )
     {
+        logger.info("Starting Preprocessing of MapTiles");
+        long startTime = System.currentTimeMillis();
+
         OSMInputFile in = null;
         try
         {
@@ -353,6 +356,10 @@ public class OSMReader implements DataReader
             areaProcessor.finishMapFill();
         }
         logger.info("Created landuse map, #tiles:" + nf(areaProcessor.landuseMap.size()) + ", " + Helper.getMemInfo());
+
+        long stopTime = System.currentTimeMillis();
+        long elapsedTime = stopTime - startTime;
+        logger.info("Created landuse map, took:" + elapsedTime);
     }
 
 
@@ -424,6 +431,8 @@ public class OSMReader implements DataReader
         }
     }
 
+    int counter = 0;
+
     /**
      * Process properties, encode flags and create edges for the way.
      */
@@ -466,6 +475,7 @@ public class OSMReader implements DataReader
         String spatialSurround = "";
         if (useLanduse && landuseCases.size() > 0)
         {
+            long startTime = System.currentTimeMillis();
             String waySurroundFirst = areaProcessor.getUsage(firstLat, firstLon);
             String waySurroundLast = areaProcessor.getUsage(lastLat, lastLon);
             if (!waySurroundFirst.isEmpty())
@@ -475,6 +485,13 @@ public class OSMReader implements DataReader
             if (!waySurroundLast.isEmpty())
             {
                 spatialSurround += waySurroundLast;
+            }
+
+            if(counter <10){
+                long stopTime = System.currentTimeMillis();
+                long elapsedTime = stopTime - startTime;
+                logger.info("Time for looking up one Street: "+elapsedTime);
+                counter++;
             }
         }
         way.setTag("spatial_surround", spatialSurround);
