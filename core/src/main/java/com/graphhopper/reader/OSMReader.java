@@ -316,7 +316,7 @@ public class OSMReader implements DataReader
 
     boolean wayStart = true;
 
-    private void areaPreProcessingLight(final OSMElement item){
+    private void areaPreProcessingLight(OSMElement item){
         if (item.isType(OSMElement.NODE))
         {
             areaProcessor.collectNodeData((OSMNode) item);
