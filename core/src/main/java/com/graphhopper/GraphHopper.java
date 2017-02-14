@@ -17,6 +17,8 @@
  */
 package com.graphhopper;
 
+import com.graphhopper.coll.GHBitSet;
+import com.graphhopper.coll.GHBitSetImpl;
 import com.graphhopper.json.geo.JsonFeature;
 import com.graphhopper.reader.DataReader;
 import com.graphhopper.reader.dem.BridgeElevationInterpolator;
@@ -877,9 +879,50 @@ public class GraphHopper implements GraphHopperAPI {
             ghStorage = newGraph;
         }
 
+        final AllEdgesIterator edge = ghStorage.getAllEdges();
+        final GHBitSet visitedNodes = new GHBitSetImpl(edge.getMaxId());
+        final EdgeExplorer edgeExplorer = ghStorage.createEdgeExplorer();
+        EdgeIteratorState lastIterator = null;
+        EdgeIteratorState currentIterator;
+        int i;
+        int contractionCounter = 0;
+        boolean wasContracted = false;
+
+        while (edge.next()) {
+            final int nodeId = edge.getBaseNode();
+            if(visitedNodes.contains(nodeId))
+                continue;
+            EdgeIterator edgeIterator = edgeExplorer.setBaseNode(nodeId);
+            i = 0;
+            wasContracted = false;
+            while (edgeIterator.next()){
+                if(i > 1){
+                    if(wasContracted)
+                        contractionCounter--;
+                    break;
+                }
+                currentIterator = ghStorage.getEdgeIteratorState(edgeIterator.getEdge(), edgeIterator.getAdjNode());
+                // Check if contraction is possible
+                if(i == 1){
+                    if(lastIterator.getFlags() == currentIterator.getFlags()){
+                        contractionCounter++;
+                        wasContracted = true;
+                        System.out.println("Found contractable Edge #"+contractionCounter);
+                    }
+                }
+
+                lastIterator = currentIterator;
+                i++;
+            }
+
+            visitedNodes.add(nodeId);
+        }
+
         if (hasElevation()) {
             interpolateBridgesAndOrTunnels();
         }
+
+
 
         initLocationIndex();
         if (chFactoryDecorator.isEnabled())
