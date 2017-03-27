@@ -574,7 +574,7 @@ public class Path {
                  */
 
                 int prevEdge = -1;
-                EdgeIterator flagIter = crossingExplorer.setBaseNode(baseNode);
+                EdgeIterator flagIter = crossingExplorer.setBaseNode(prevNode);
                 while (flagIter.next()) {
                     if (flagIter.getAdjNode() == prevNode || flagIter.getBaseNode() == prevNode)
                         prevEdge = flagIter.getEdge();
@@ -585,7 +585,7 @@ public class Path {
                 }
 
                 long flag = edge.getFlags();
-                long prevFlag = graph.getEdgeIteratorState(prevEdge, baseNode).getFlags();
+                long prevFlag = graph.getEdgeIteratorState(prevEdge, prevNode).getFlags();
 
                 boolean surroundingStreetsAreSlower = surroundingStreetsAreSlowerByFactor(baseNode, prevNode, adjNode, 1);
 
