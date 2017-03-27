@@ -535,6 +535,10 @@ public class Path {
             }
 
             private int getTurn(EdgeIteratorState edge, int baseNode, int prevNode, int adjNode) {
+                if (isVirtualNode(prevNode, baseNode, adjNode)) {
+                    return Instruction.IGNORE;
+                }
+
                 GHPoint point = getPointForOrientationCalculation(edge);
                 double lat = point.getLat();
                 double lon = point.getLon();
@@ -640,6 +644,18 @@ public class Path {
                 return returnForcedInstructionOrIgnore(forceInstruction, sign);
             }
 
+            private boolean isVirtualNode(int... nodes) {
+                if (graph instanceof QueryGraph) {
+                    // We cannot use isVirtualEdge as sometimes there is no edge created
+                    for (int node : nodes) {
+                        if (((QueryGraph) graph).isVirtualNode(node)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
             private GHPoint getPointForOrientationCalculation(EdgeIteratorState edgeIteratorState) {
                 double tmpLat;
                 double tmpLon;
@@ -654,8 +670,8 @@ public class Path {
                 return new GHPoint(tmpLat, tmpLon);
             }
 
-            private int returnForcedInstructionOrIgnore(boolean forceInstruction, int sign){
-                if(forceInstruction)
+            private int returnForcedInstructionOrIgnore(boolean forceInstruction, int sign) {
+                if (forceInstruction)
                     return sign;
                 return Instruction.IGNORE;
             }
@@ -700,7 +716,9 @@ public class Path {
                 EdgeIterator edgeIter = outEdgeExplorer.setBaseNode(baseNode);
                 int tmpSign;
                 while (edgeIter.next()) {
-                    if (edgeIter.getAdjNode() != prevNode && edgeIter.getAdjNode() != adjNode) {
+                    if (!isVirtualNode(edgeIter.getAdjNode()) &&
+                            edgeIter.getAdjNode() != prevNode &&
+                            edgeIter.getAdjNode() != adjNode) {
                         GHPoint point = getPointForOrientationCalculation(edgeIter);
                         tmpSign = calculateSign(point.getLat(), point.getLon());
                         if (Math.abs(tmpSign) <= 1) {
@@ -758,7 +776,9 @@ public class Path {
                 EdgeIterator edgeIter = outEdgeExplorer.setBaseNode(baseNode);
                 int count = 1;
                 while (edgeIter.next()) {
-                    if (edgeIter.getAdjNode() != prevNode && edgeIter.getAdjNode() != adjNode)
+                    if (!isVirtualNode(edgeIter.getAdjNode()) &&
+                            edgeIter.getAdjNode() != prevNode &&
+                            edgeIter.getAdjNode() != adjNode)
                         count++;
                 }
                 return count;
