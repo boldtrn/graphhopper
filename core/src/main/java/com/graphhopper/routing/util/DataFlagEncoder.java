@@ -17,6 +17,7 @@
  */
 package com.graphhopper.routing.util;
 
+import com.graphhopper.reader.ReaderNode;
 import com.graphhopper.reader.ReaderRelation;
 import com.graphhopper.reader.ReaderWay;
 import com.graphhopper.routing.util.spatialrules.AccessValue;
@@ -85,7 +86,7 @@ public class DataFlagEncoder extends AbstractFlagEncoder {
     private EncodedValue highwayEncoder;
     private EncodedValue transportModeEncoder;
     private EncodedValue accessEncoder;
-    private EncodedValue tollEncoder;
+    private EncodedValue tollFreeEncoder;
     private boolean storeHeight = false;
     private boolean storeWeight = false;
     private boolean storeWidth = false;
@@ -208,8 +209,8 @@ public class DataFlagEncoder extends AbstractFlagEncoder {
         }
 
         if (isStoreToll()) {
-            tollEncoder = new EncodedValue("toll", shift, 1, 1, 0, 1, true);
-            shift += tollEncoder.getBits();
+            tollFreeEncoder = new EncodedValue("toll free", shift, 1, 1, 1, 1, true);
+            shift += tollFreeEncoder.getBits();
         }
 
         highwayEncoder = new EncodedValue("highway", shift, 5, 1, 0, highwayMap.size(), true);
@@ -376,7 +377,9 @@ public class DataFlagEncoder extends AbstractFlagEncoder {
 
             if (isStoreToll()) {
                 if (way.hasTag("toll", "yes")) {
-                    flags = tollEncoder.setValue(flags, 1);
+                    flags = tollFreeEncoder.setValue(flags, 0);
+                } else {
+                    flags = tollFreeEncoder.setValue(flags, 1);
                 }
             }
 
@@ -438,6 +441,23 @@ public class DataFlagEncoder extends AbstractFlagEncoder {
         } catch (Exception ex) {
             throw new RuntimeException("Error while parsing way " + way.toString(), ex);
         }
+    }
+
+    @Override
+    public long handleNodeTags(ReaderNode node) {
+        long flags = super.handleNodeTags(node);
+
+        if(isStoreToll()){
+            if (node.hasTag("barrier", "toll_both")){
+                /*
+                 * This is tricky. In OSMReader#addBarrierEdge(), we use the complement of the flags returned by the
+                 * handleNodeTags. As we want to set this flag to 0, we hve to set to 1 here.
+                 */
+                flags = tollFreeEncoder.setValue(flags, 1);
+            }
+        }
+
+        return flags;
     }
 
     private boolean isSpatialRuleLookupEnabled() {
@@ -745,7 +765,7 @@ public class DataFlagEncoder extends AbstractFlagEncoder {
         if (!isStoreToll())
             return false;
         long flags = edge.getFlags();
-        return tollEncoder.getValue(flags) == 1;
+        return tollFreeEncoder.getValue(flags) == 0;
     }
 
     @Override
@@ -913,7 +933,7 @@ public class DataFlagEncoder extends AbstractFlagEncoder {
         cloneDoubleAttribute(weightingMap, cMap, GenericWeighting.WEIGHT_LIMIT, 0d);
         cloneDoubleAttribute(weightingMap, cMap, GenericWeighting.WIDTH_LIMIT, 0d);
 
-        if(weightingMap.has(GenericWeighting.AVOID_TOLL)){
+        if (weightingMap.has(GenericWeighting.AVOID_TOLL)) {
             cMap.put(GenericWeighting.AVOID_TOLL, weightingMap.getBool(GenericWeighting.AVOID_TOLL, false));
         }
 

@@ -6,6 +6,7 @@ import com.graphhopper.json.geo.GeoJsonPolygon;
 import com.graphhopper.json.geo.Geometry;
 import com.graphhopper.json.geo.JsonFeature;
 import com.graphhopper.json.geo.JsonFeatureCollection;
+import com.graphhopper.reader.ReaderNode;
 import com.graphhopper.routing.AbstractRoutingAlgorithmTester;
 import com.graphhopper.routing.util.spatialrules.*;
 import com.graphhopper.routing.util.spatialrules.countries.GermanySpatialRule;
@@ -286,6 +287,11 @@ public class DataFlagEncoderTest {
         flags = encoder.handleWayTags(osmWay, 1, 0);
         edge = GHUtility.createMockedEdgeIteratorState(0, flags);
         assertTrue(encoder.isTollRoad(edge));
+
+        ReaderNode node = new ReaderNode(1, -1, -1);
+        node.setTag("barrier", "toll_both");
+        //assertEquals(encoder.handleNodeTags(node));
+
     }
 
     @Test
