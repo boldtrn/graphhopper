@@ -39,6 +39,9 @@ import java.util.List;
  */
 class InstructionsSurroundingEdges {
 
+    // We just don't care about accuracy in this case
+    final static DistanceCalc distCalc = new DistanceCalc2D();
+
     final EdgeIteratorState prevEdge;
     final EdgeIteratorState currentEdge;
 
@@ -50,6 +53,9 @@ class InstructionsSurroundingEdges {
 
     final FlagEncoder encoder;
     final NodeAccess nodeAccess;
+
+    final int baseNode;
+    final int adjNode;
 
     public InstructionsSurroundingEdges(EdgeIteratorState prevEdge,
                                         EdgeIteratorState currentEdge,
@@ -63,6 +69,8 @@ class InstructionsSurroundingEdges {
         this.currentEdge = currentEdge;
         this.encoder = encoder;
         this.nodeAccess = nodeAccess;
+        this.baseNode = baseNode;
+        this.adjNode = adjNode;
 
         EdgeIteratorState tmpEdge;
 
@@ -133,12 +141,38 @@ class InstructionsSurroundingEdges {
      */
     public EdgeIteratorState getOtherContinue(double prevLat, double prevLon, double prevOrientation) {
         int tmpSign;
+
+        GHPoint base = new GHPoint(nodeAccess.getLat(baseNode), nodeAccess.getLon(baseNode));
+        //GHPoint adj = new GHPoint(nodeAccess.getLat(adjNode), nodeAccess.getLon(adjNode));
+        GHPoint adj = InstructionsHelper.getPointForOrientationCalculation(currentEdge, nodeAccess);
+
+        double currentEdgeDistance = distCalc.calcDist(base.getLat(), base.getLon(), adj.getLat(), adj.getLon());//currentEdge.getDistance();
+        double latComponent;
+        double lonComponent;
+
+        double normFactor;
+
+        double distFromOtherEnd;
+
         for (EdgeIteratorState edge : reachableEdges) {
             GHPoint point = InstructionsHelper.getPointForOrientationCalculation(edge, nodeAccess);
+
+            latComponent = point.getLat() - base.getLat();
+            lonComponent = point.getLon() - base.getLon();
+
+            normFactor = currentEdgeDistance / distCalc.calcDist(base.getLat(), base.getLon(), point.getLat(), point.getLon());
+
+            distFromOtherEnd = distCalc.calcDist(adj.getLat(), adj.getLon(), base.getLat() + (latComponent*normFactor), base.getLon() + (lonComponent*normFactor));
+
+            if(distFromOtherEnd < .8 * currentEdgeDistance){
+                return edge;
+            }
+            /*
             tmpSign = InstructionsHelper.calculateSign(prevLat, prevLon, point.getLat(), point.getLon(), prevOrientation);
             if (Math.abs(tmpSign) <= 1) {
                 return edge;
             }
+            */
         }
         return null;
     }
