@@ -46,11 +46,12 @@ public class GraphHopperLandmarksIT extends BaseServletTester {
     public void setUp() {
         CmdArgs args = new CmdArgs().
                 put("config", "../config-example.properties").
-                put("prepare.ch.weightings", "no").
+                put("prepare.ch.weightings", "fastest").
                 put("prepare.lm.weightings", "fastest").
                 put("datareader.file", "../core/files/belarus-east.osm.gz").
                 put("prepare.min_network_size", 0).
                 put("prepare.min_one_way_network_size", 0).
+                put("routing.ch.disabling_allowed", true).
                 put("routing.lm.disabling_allowed", true).
                 put("graph.location", DIR);
 
@@ -62,7 +63,7 @@ public class GraphHopperLandmarksIT extends BaseServletTester {
 
     @Test
     public void testSimpleQuery() throws Exception {
-        JsonNode json = query("point=55.99022,29.129734&point=56.001069,29.150848", 200);
+        JsonNode json = query("point=55.99022,29.129734&point=56.001069,29.150848&ch.disable=true", 200);
         JsonNode path = json.get("paths").get(0);
         double distance = path.get("distance").asDouble();
         assertEquals("distance wasn't correct:" + distance, 1870, distance, 100);
@@ -71,16 +72,25 @@ public class GraphHopperLandmarksIT extends BaseServletTester {
     @Test
     public void testLandmarkDisconnect() throws Exception {
 
+        // disconnected for ch+lm
+        query("point=55.99022,29.129734&point=56.007787,29.208355", 400);
+
+        // connected for ch, if adding lm.disable=true
+        JsonNode json = query("point=55.99022,29.129734&point=56.007787,29.208355&lm.disable=true", 200);
+        JsonNode errorJson = json.get("message");
+        JsonNode path = json.get("paths").get(0);
+        double distance = path.get("distance").asDouble();
+        assertEquals("distance wasn't correct:" + distance, 5790, distance, 100);
 
         // disconnected for landmarks
-        JsonNode json = query("point=55.99022,29.129734&point=56.007787,29.208355", 400);
-        JsonNode errorJson = json.get("message");
+        json = query("point=55.99022,29.129734&point=56.007787,29.208355&ch.disable=true", 400);
+        errorJson = json.get("message");
         assertTrue(errorJson.toString(), errorJson.toString().contains("Different subnetworks"));
 
         // without lm it should work
-        json = query("point=55.99022,29.129734&point=56.007787,29.208355&lm.disable=true", 200);
-        JsonNode path = json.get("paths").get(0);
-        double distance = path.get("distance").asDouble();
+        json = query("point=55.99022,29.129734&point=56.007787,29.208355&ch.disable=true&lm.disable=true", 200);
+        path = json.get("paths").get(0);
+        distance = path.get("distance").asDouble();
         assertEquals("distance wasn't correct:" + distance, 5790, distance, 100);
 
         shutdownJetty(true);
