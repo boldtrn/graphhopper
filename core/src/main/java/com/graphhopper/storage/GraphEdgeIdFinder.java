@@ -25,6 +25,7 @@ import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.BreadthFirstSearch;
 import com.graphhopper.util.EdgeIteratorState;
+import com.graphhopper.util.Helper;
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.shapes.BBox;
 import com.graphhopper.util.shapes.Circle;
@@ -64,11 +65,18 @@ public class GraphEdgeIdFinder {
         QueryResult qr = locationIndex.findClosest(lat, lon, filter);
         if (qr.isValid())
             edgeIds.add(qr.getClosestEdge().getEdge());
-        if(graph instanceof QueryGraph){
-            List<QueryResult> queryResults = ((QueryGraph) graph).getQueryResults();
+        if (graph instanceof QueryGraph) {
             List<VirtualEdgeIteratorState> virtualEdges = ((QueryGraph) graph).getVirtualEdges();
-            if(edgeIds.contains(virtualEdges.get(1).getOriginalTraversalKey())){
-                edgeIds.add(virtualEdges.get(1).getEdge());
+            for (VirtualEdgeIteratorState edge : virtualEdges) {
+                PointList pl = edge.fetchWayGeometry(3);
+                for (int i = 0; i < pl.size(); i++) {
+                    double dist = Helper.DIST_PLANE.calcDist(lat, lon, pl.getLat(i), pl.getLon(i));
+                    // The the blocked point is closer than this, the edge will be blocked
+                    if (dist < 10) {
+                        edgeIds.add(edge.getEdge());
+                        break;
+                    }
+                }
             }
         }
     }
