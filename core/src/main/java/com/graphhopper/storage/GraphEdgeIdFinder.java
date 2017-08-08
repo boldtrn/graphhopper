@@ -18,6 +18,8 @@
 package com.graphhopper.storage;
 
 import com.graphhopper.coll.GHIntHashSet;
+import com.graphhopper.routing.QueryGraph;
+import com.graphhopper.routing.VirtualEdgeIteratorState;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.QueryResult;
@@ -62,6 +64,13 @@ public class GraphEdgeIdFinder {
         QueryResult qr = locationIndex.findClosest(lat, lon, filter);
         if (qr.isValid())
             edgeIds.add(qr.getClosestEdge().getEdge());
+        if(graph instanceof QueryGraph){
+            List<QueryResult> queryResults = ((QueryGraph) graph).getQueryResults();
+            List<VirtualEdgeIteratorState> virtualEdges = ((QueryGraph) graph).getVirtualEdges();
+            if(edgeIds.contains(virtualEdges.get(1).getOriginalTraversalKey())){
+                edgeIds.add(virtualEdges.get(1).getEdge());
+            }
+        }
     }
 
     /**

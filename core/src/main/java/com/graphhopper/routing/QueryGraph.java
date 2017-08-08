@@ -421,6 +421,14 @@ public class QueryGraph implements Graph {
         virtualEdges.add(baseReverseEdge);
     }
 
+    public List<VirtualEdgeIteratorState> getVirtualEdges(){
+        return virtualEdges;
+    }
+
+    public List<QueryResult> getQueryResults(){
+        return queryResults;
+    }
+
     /**
      * Set those edges at the virtual node (nodeId) to 'unfavored' that require at least a turn of
      * 100° from favoredHeading.
