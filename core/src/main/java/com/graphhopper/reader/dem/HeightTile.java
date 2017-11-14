@@ -24,6 +24,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -41,6 +43,7 @@ public class HeightTile {
     private final double higherBound;
     private DataAccess heights;
     private boolean calcMean;
+    private boolean bilinearInterpolation = false;
 
     public HeightTile(int minLat, int minLon, int width, double precision, int degree) {
         this.minLat = minLat;
@@ -81,11 +84,11 @@ public class HeightTile {
 
         // first row in the file is the northernmost one
         // http://gis.stackexchange.com/a/43756/9006
-        int lonSimilar = (int) (width / degree * deltaLon);
+        int lonSimilar = (int) ((width / degree) * deltaLon);
         // different fallback methods for lat and lon as we have different rounding (lon -> positive, lat -> negative)
         if (lonSimilar >= width)
             lonSimilar = width - 1;
-        int latSimilar = width - 1 - (int) (width / degree * deltaLat);
+        int latSimilar = width - 1 - (int) ((width / degree) * deltaLat);
         if (latSimilar < 0)
             latSimilar = 0;
 
@@ -96,6 +99,9 @@ public class HeightTile {
         if (value == Short.MIN_VALUE)
             return Double.NaN;
 
+        //if (bilinearInterpolation)
+        return getInterpolatedValue(value, deltaLat, deltaLon, latSimilar, lonSimilar, daPointer);
+/*
         if (calcMean) {
             if (lonSimilar > 0)
                 value += includePoint(daPointer - 2, counter);
@@ -111,6 +117,110 @@ public class HeightTile {
         }
 
         return (double) value / counter.get();
+        */
+    }
+
+    private double getInterpolatedValue(int value, double deltaLat, double deltaLon, int latSimilar, int lonSimilar, int daPointer) {
+        double interpolatedValue = value;
+        double doubleLonSimilar = (width / degree) * deltaLon;
+        if (doubleLonSimilar >= width)
+            doubleLonSimilar = width - 1;
+        double doubleLatSimilar = (width / degree) * deltaLat;
+        if (doubleLatSimilar < 0)
+            doubleLatSimilar = 0;
+
+        double cellSize = ((double) degree) / width;
+        double horizontalDistFromBorder = doubleLonSimilar % cellSize;
+        double verticalDistFromBorder = doubleLatSimilar % cellSize;
+
+        List<Double> list = new ArrayList<>(4);
+        list.add(interpolatedValue);
+
+        if (horizontalDistFromBorder < cellSize * .1 && verticalDistFromBorder < cellSize * .1) {
+            list.add(getUpperLeftValue(daPointer, latSimilar, lonSimilar, interpolatedValue));
+        } else if (horizontalDistFromBorder > cellSize * .9 && verticalDistFromBorder < cellSize * .1) {
+            list.add(getUpperRightValue(daPointer, latSimilar, lonSimilar, interpolatedValue));
+        } else if (horizontalDistFromBorder < cellSize * .1 && verticalDistFromBorder > cellSize * .9) {
+            list.add(getLowerLeftValue(daPointer, latSimilar, lonSimilar, interpolatedValue));
+        } else if (horizontalDistFromBorder > cellSize * .9 && verticalDistFromBorder > cellSize * .9) {
+            list.add(getLowerRightValue(daPointer, latSimilar, lonSimilar, interpolatedValue));
+        }
+
+        if (horizontalDistFromBorder < cellSize * .25) {
+            list.add(getLeftValue(daPointer, lonSimilar, interpolatedValue));
+        } else if (horizontalDistFromBorder > cellSize * .75) {
+            list.add(getRightValue(daPointer, lonSimilar, interpolatedValue));
+        }
+        if (verticalDistFromBorder < cellSize * .25) {
+            list.add(getUpperValue(daPointer, latSimilar, interpolatedValue));
+        } else if (verticalDistFromBorder > cellSize * .75) {
+            list.add(getLowerValue(daPointer, latSimilar, interpolatedValue));
+        }
+
+        double interpolated = value;
+        for (Double d : list) {
+            interpolated += d;
+        }
+
+        return interpolated / (list.size() + 1);
+    }
+
+    private double getLeftValue(int daPointer, int lonSimilar, double fallbackValue) {
+        if (lonSimilar > 0) {
+            // TODO: Hanlde Short.min
+            return heights.getShort(daPointer - 2);
+        }
+        return fallbackValue;
+    }
+
+    private double getRightValue(int daPointer, int lonSimilar, double fallbackValue) {
+        if (lonSimilar < width - 1) {
+            // TODO: Hanlde Short.min
+            return heights.getShort(daPointer + 2);
+        }
+        return fallbackValue;
+    }
+
+    private double getUpperValue(int daPointer, int latSimilar, double fallbackValue) {
+        if (latSimilar > 0) {
+            return heights.getShort(daPointer - 2 * width);
+        }
+        return fallbackValue;
+    }
+
+    private double getLowerValue(int daPointer, int latSimilar, double fallbackValue) {
+        if (latSimilar < width - 1) {
+            return heights.getShort(daPointer + 2 * width);
+        }
+        return fallbackValue;
+    }
+
+    private double getUpperLeftValue(int daPointer, int latSimilar, int lonSimilar, double fallbackValue) {
+        if (latSimilar > 0 && lonSimilar > 0) {
+            return heights.getShort(daPointer - (2 * width) - 2);
+        }
+        return fallbackValue;
+    }
+
+    private double getUpperRightValue(int daPointer, int latSimilar, int lonSimilar, double fallbackValue) {
+        if (latSimilar > 0 && lonSimilar < width - 1) {
+            return heights.getShort(daPointer - (2 * width) + 2);
+        }
+        return fallbackValue;
+    }
+
+    private double getLowerLeftValue(int daPointer, int latSimilar, int lonSimilar, double fallbackValue) {
+        if (latSimilar < width - 1 && lonSimilar > 0) {
+            return heights.getShort(daPointer + (2 * width) - 2);
+        }
+        return fallbackValue;
+    }
+
+    private double getLowerRightValue(int daPointer, int latSimilar, int lonSimilar, double fallbackValue) {
+        if (latSimilar < width - 1 && lonSimilar < width - 1) {
+            return heights.getShort(daPointer + (2 * width) + 2);
+        }
+        return fallbackValue;
     }
 
     private double includePoint(int pointer, AtomicInteger counter) {
@@ -164,5 +274,9 @@ public class HeightTile {
     @Override
     public String toString() {
         return minLat + "," + minLon;
+    }
+
+    public void setBilinearInterpolation(boolean bilinearInterpolation) {
+        this.bilinearInterpolation = bilinearInterpolation;
     }
 }
