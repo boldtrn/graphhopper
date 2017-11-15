@@ -99,8 +99,79 @@ public class HeightTile {
         if (value == Short.MIN_VALUE)
             return Double.NaN;
 
+
+        double doubleLonSimilar = (width / degree) * deltaLon;
+        if (doubleLonSimilar >= width)
+            doubleLonSimilar = width - 1;
+        double doubleLatSimilar = width - 1 - ((width / degree) * deltaLat);
+        if (doubleLatSimilar < 0)
+            doubleLatSimilar = 0;
+
+        double cellSize = ((double) degree) / width;
+        double horizontalDistFromBorder = doubleLonSimilar % cellSize;
+        double verticalDistFromBorder = doubleLatSimilar % cellSize;
+
+        double x1, x2, y1, y2;
+
+        double tl;
+        double tr;
+        double bl;
+        double br;
+
+        // Point lies to the left
+        if (horizontalDistFromBorder < .5 * cellSize) {
+            x1 = (lonSimilar - 1) * cellSize;
+            x2 = (lonSimilar) * cellSize;
+            // Point lies in the upper half
+            if (verticalDistFromBorder < .5 * cellSize) {
+                tl = getUpperLeftValue(daPointer, latSimilar, lonSimilar, value);
+                tr = getUpperValue(daPointer, latSimilar, value);
+                bl = getLeftValue(daPointer, lonSimilar, value);
+                br = value;
+
+                y1 = latSimilar * cellSize;
+                y2 = (latSimilar - 1) * cellSize;
+            } else {
+                tl = getLeftValue(daPointer, lonSimilar, value);
+                tr = value;
+                bl = getLowerLeftValue(daPointer, latSimilar, lonSimilar, value);
+                br = getLowerValue(daPointer, latSimilar, value);
+
+                y1 = (latSimilar + 1) * cellSize;
+                y2 = latSimilar * cellSize;
+            }
+            // Point lies to the right
+        } else {
+            x1 = (lonSimilar) * cellSize;
+            x2 = (lonSimilar + 1) * cellSize;
+
+            // Point lies in the upper half
+            if (verticalDistFromBorder < .5 * cellSize) {
+                tl = getUpperValue(daPointer, latSimilar, value);
+                tr = getUpperRightValue(daPointer, latSimilar, lonSimilar, value);
+                bl = value;
+                br = getRightValue(daPointer, lonSimilar, value);
+
+                y1 = latSimilar * cellSize;
+                y2 = (latSimilar - 1) * cellSize;
+            } else {
+                tl = value;
+                tr = getRightValue(daPointer, lonSimilar, value);
+                bl = getLowerValue(daPointer, latSimilar, value);
+                br = getLowerRightValue(daPointer, latSimilar, lonSimilar, value);
+
+                y1 = (latSimilar + 1) * cellSize;
+                y2 = latSimilar * cellSize;
+            }
+        }
+
+        System.out.println("Orig: " + value);
+        double interpolated = biLerp(doubleLonSimilar, doubleLatSimilar, bl, tl, br, tr, x1, x2, y1, y2);
+        System.out.println("Int:" + interpolated);
+        return interpolated;
+
         //if (bilinearInterpolation)
-        return getInterpolatedValue(value, deltaLat, deltaLon, latSimilar, lonSimilar, daPointer);
+        //return getInterpolatedValue(value, deltaLat, deltaLon, latSimilar, lonSimilar, daPointer);
 /*
         if (calcMean) {
             if (lonSimilar > 0)
@@ -118,6 +189,17 @@ public class HeightTile {
 
         return (double) value / counter.get();
         */
+    }
+
+    public static double lerp(double x, double x1, double x2, double q00, double q01) {
+        return ((x2 - x) / (x2 - x1)) * q00 + ((x - x1) / (x2 - x1)) * q01;
+    }
+
+    public static double biLerp(double x, double y, double q11, double q12, double q21, double q22, double x1, double x2, double y1, double y2) {
+        double r1 = lerp(x, x1, x2, q11, q21);
+        double r2 = lerp(x, x1, x2, q12, q22);
+
+        return lerp(y, y1, y2, r1, r2);
     }
 
     private double getInterpolatedValue(int value, double deltaLat, double deltaLon, int latSimilar, int lonSimilar, int daPointer) {
