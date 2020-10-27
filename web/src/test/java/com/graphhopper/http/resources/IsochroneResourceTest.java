@@ -145,7 +145,7 @@ public class IsochroneResourceTest {
                 .queryParam("point", "42.531073,1.573792")
                 .queryParam("type", "geojson");
 
-        long limit = 3000;
+        long limit = 15000;
 
         Response distanceLimitRsp = commonTarget
                 .queryParam("distance_limit", limit)

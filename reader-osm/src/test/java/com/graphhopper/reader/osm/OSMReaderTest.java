@@ -628,12 +628,12 @@ public class OSMReaderTest {
         OSMReader osmreader = new OSMReader(ghStorage) {
             // mock data access
             @Override
-            double getTmpLatitude(int id) {
+            protected double getTmpLatitude(int id) {
                 return latMap.get(id);
             }
 
             @Override
-            double getTmpLongitude(int id) {
+            protected double getTmpLongitude(int id) {
                 return lonMap.get(id);
             }
 
