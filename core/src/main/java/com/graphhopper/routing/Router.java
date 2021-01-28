@@ -256,7 +256,7 @@ public class Router {
         }
     }
 
-    private PathCalculator createCHPathCalculator(QueryGraph queryGraph, Profile profile, PMap opts) {
+    protected PathCalculator createCHPathCalculator(QueryGraph queryGraph, Profile profile, PMap opts) {
         return new CHPathCalculator(new CHRoutingAlgorithmFactory(getRoutingCHGraph(profile.getName()), queryGraph), opts);
     }
 

@@ -19,7 +19,9 @@
 package com.graphhopper.routing;
 
 import com.graphhopper.routing.ch.CHRoutingAlgorithmFactory;
+import com.graphhopper.routing.weighting.Weighting;
 import com.graphhopper.util.PMap;
+import com.graphhopper.util.Parameters;
 import com.graphhopper.util.StopWatch;
 
 import java.util.Collections;
@@ -50,6 +52,12 @@ public class CHPathCalculator implements PathCalculator {
     private BidirRoutingAlgorithm createAlgo() {
         StopWatch sw = new StopWatch().start();
         BidirRoutingAlgorithm algo = algoFactory.createAlgo(algoOpts);
+        if(AbstractBidirCHAlgo.class.isAssignableFrom(algo.getClass())){
+            Weighting etaWeighting = algoOpts.getObject(Parameters.CH.ETA_WEIGHTING, null);
+            if(etaWeighting != null){
+                ((AbstractBidirCHAlgo) algo).setCHEtaWeighting(etaWeighting);
+            }
+        }
         debug = ", algoInit:" + (sw.stop().getNanos() / 1000) + " μs";
         return algo;
     }
