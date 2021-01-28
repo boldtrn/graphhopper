@@ -276,7 +276,7 @@ public class Router {
         return new FlexiblePathCalculator(queryGraph, algorithmFactory, algoOpts);
     }
 
-    private RoutingCHGraph getRoutingCHGraph(String profileName) {
+    protected RoutingCHGraph getRoutingCHGraph(String profileName) {
         RoutingCHGraph chGraph = chGraphs.get(profileName);
         if (chGraph == null)
             throw new IllegalArgumentException("Cannot find CH preparation for the requested profile: '" + profileName + "'" +
