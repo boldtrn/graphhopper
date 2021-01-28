@@ -17,6 +17,7 @@
  */
 package com.graphhopper.routing.weighting;
 
+import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.IntSet;
 import com.graphhopper.coll.GHIntHashSet;
 import com.graphhopper.util.EdgeIteratorState;
@@ -43,6 +44,12 @@ public class AvoidEdgesWeighting extends AbstractAdjustedWeighting {
 
     public void setAvoidedEdges(IntSet avoidedEdges) {
         this.avoidedEdges = avoidedEdges;
+    }
+
+    public void addAvoidedEdges(IntArrayList edgeIds) {
+        for (int i = 0; i < edgeIds.size(); i++) {
+            avoidedEdges.add(edgeIds.get(i));
+        }
     }
 
     @Override
