@@ -299,7 +299,7 @@ public abstract class AbstractBidirCHAlgo extends AbstractBidirAlgo implements B
     /**
      * Call this method if you want to change the ETA Weighting for CH
      */
-    public void setCHEtaWeighting(Weighting weighting){
+    void setCHEtaWeighting(Weighting weighting){
         pathExtractorSupplier = () -> new NodeBasedCHBidirPathExtractor(graph, weighting);
     }
 }
