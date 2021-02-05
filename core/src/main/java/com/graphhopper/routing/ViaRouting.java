@@ -23,6 +23,7 @@ import com.graphhopper.routing.querygraph.QueryGraph;
 import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.NameSimilarityEdgeFilter;
 import com.graphhopper.routing.util.SnapPreventionEdgeFilter;
+import com.graphhopper.routing.weighting.AvoidEdgesWeighting;
 import com.graphhopper.routing.weighting.Weighting;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.Snap;
@@ -144,6 +145,14 @@ public class ViaRouting {
 
                 result.paths.add(path);
                 result.debug += ", " + path.getDebugInfo();
+
+                // Enable AvoidEdgesOption
+                if (pathCalculator instanceof FlexiblePathCalculator) {
+                    final Weighting weighting = ((FlexiblePathCalculator) pathCalculator).getAlgoOpts().getWeighting();
+                    if (weighting instanceof AvoidEdgesWeighting) {
+                        ((AvoidEdgesWeighting) weighting).addAvoidedEdges(path.getEdges());
+                    }
+                }
             }
 
             result.visitedNodes += pathCalculator.getVisitedNodes();

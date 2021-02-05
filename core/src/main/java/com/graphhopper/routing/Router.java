@@ -162,6 +162,10 @@ public class Router {
         FlexiblePathCalculator pathCalculator = createFlexiblePathCalculator(queryGraph, profile, roundTripAlgoOpts, disableLM);
 
         RoundTripRouting.Result result = RoundTripRouting.calcPaths(qResults, pathCalculator);
+
+        // Trigger Postprocessing
+        result.paths = postProcessPaths(result.paths);
+
         // we merge the different legs of the roundtrip into one response path
         ResponsePath responsePath = concatenatePaths(request, weighting, queryGraph, result.paths, getWaypoints(qResults));
         ghRsp.add(responsePath);
@@ -189,6 +193,9 @@ public class Router {
         if (result.paths.isEmpty())
             throw new RuntimeException("Empty paths for alternative route calculation not expected");
 
+        // Trigger Postprocessing
+        result.paths = postProcessPaths(result.paths);
+
         // each path represents a different alternative and we do the path merging for each of them
         PathMerger pathMerger = createPathMerger(request, weighting, queryGraph);
         for (Path path : result.paths) {
@@ -211,6 +218,9 @@ public class Router {
         QueryGraph queryGraph = QueryGraph.create(ghStorage, qResults);
         PathCalculator pathCalculator = createPathCalculator(queryGraph, profile, algoOpts, disableCH, disableLM);
         ViaRouting.Result result = ViaRouting.calcPaths(request.getPoints(), queryGraph, qResults, weighting.getFlagEncoder().getAccessEnc(), pathCalculator, request.getCurbsides(), forceCurbsides, request.getHeadings(), passThrough);
+
+        // Trigger Postprocessing
+        result.paths = postProcessPaths(result.paths);
 
         if (request.getPoints().size() != result.paths.size() + 1)
             throw new RuntimeException("There should be exactly one more point than paths. points:" + request.getPoints().size() + ", paths:" + result.paths.size());
@@ -256,11 +266,11 @@ public class Router {
         }
     }
 
-    private PathCalculator createCHPathCalculator(QueryGraph queryGraph, Profile profile, PMap opts) {
+    protected PathCalculator createCHPathCalculator(QueryGraph queryGraph, Profile profile, PMap opts) {
         return new CHPathCalculator(new CHRoutingAlgorithmFactory(getRoutingCHGraph(profile.getName()), queryGraph), opts);
     }
 
-    private FlexiblePathCalculator createFlexiblePathCalculator(QueryGraph queryGraph, Profile profile, AlgorithmOptions algoOpts, boolean disableLM) {
+    protected FlexiblePathCalculator createFlexiblePathCalculator(QueryGraph queryGraph, Profile profile, AlgorithmOptions algoOpts, boolean disableLM) {
         RoutingAlgorithmFactory algorithmFactory;
         // for now do not allow mixing CH&LM #1082,#1889
         if (lmEnabled && !disableLM) {
@@ -276,7 +286,7 @@ public class Router {
         return new FlexiblePathCalculator(queryGraph, algorithmFactory, algoOpts);
     }
 
-    private RoutingCHGraph getRoutingCHGraph(String profileName) {
+    protected RoutingCHGraph getRoutingCHGraph(String profileName) {
         RoutingCHGraph chGraph = chGraphs.get(profileName);
         if (chGraph == null)
             throw new IllegalArgumentException("Cannot find CH preparation for the requested profile: '" + profileName + "'" +
@@ -306,12 +316,12 @@ public class Router {
         return pathMerger;
     }
 
-    private ResponsePath concatenatePaths(GHRequest request, Weighting weighting, QueryGraph queryGraph, List<Path> paths, PointList waypoints) {
+    protected ResponsePath concatenatePaths(GHRequest request, Weighting weighting, QueryGraph queryGraph, List<Path> paths, PointList waypoints) {
         PathMerger pathMerger = createPathMerger(request, weighting, queryGraph);
         return pathMerger.doWork(waypoints, paths, encodingManager, translationMap.getWithFallBack(request.getLocale()));
     }
 
-    private PointList getWaypoints(List<Snap> snaps) {
+    protected PointList getWaypoints(List<Snap> snaps) {
         PointList pointList = new PointList(snaps.size(), true);
         for (Snap snap : snaps) {
             pointList.add(snap.getSnappedPoint());
@@ -420,5 +430,9 @@ public class Router {
             }
             lastPoint = point;
         }
+    }
+
+    protected List<Path> postProcessPaths(List<Path> paths) {
+        return paths;
     }
 }

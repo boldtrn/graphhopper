@@ -20,6 +20,7 @@ package com.graphhopper.routing;
 import com.carrotsearch.hppc.IntObjectMap;
 import com.graphhopper.routing.ch.NodeBasedCHBidirPathExtractor;
 import com.graphhopper.routing.util.TraversalMode;
+import com.graphhopper.routing.weighting.Weighting;
 import com.graphhopper.storage.*;
 
 import java.util.PriorityQueue;
@@ -293,5 +294,12 @@ public abstract class AbstractBidirCHAlgo extends AbstractBidirAlgo implements B
 
             return graph.getLevel(base) <= graph.getLevel(adj);
         }
+    }
+
+    /**
+     * Call this method if you want to change the ETA Weighting for CH
+     */
+    void setCHEtaWeighting(Weighting weighting){
+        pathExtractorSupplier = () -> new NodeBasedCHBidirPathExtractor(graph, weighting);
     }
 }

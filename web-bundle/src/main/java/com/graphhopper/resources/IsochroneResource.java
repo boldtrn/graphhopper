@@ -115,7 +115,7 @@ public class IsochroneResource {
         double limit;
         if (weightLimit.get() > 0) {
             limit = weightLimit.get();
-            shortestPathTree.setWeightLimit(limit + Math.max(limit * 0.14, 2_000));
+            shortestPathTree.setWeightLimit(limit * 1.14);
         } else if (distanceLimitInMeter.get() > 0) {
             limit = distanceLimitInMeter.get();
             shortestPathTree.setDistanceLimit(limit + Math.max(limit * 0.14, 2_000));

@@ -155,6 +155,11 @@ public class Parameters {
          * This property name configures at start if the DISABLE parameter can have an effect.
          */
         public static final String INIT_DISABLING_ALLOWED = ROUTING_INIT_PREFIX + "ch.disabling_allowed";
+
+        /**
+         * Can be used to pass a special ETA weighting to the NodeBasedCHBidirPathExtractor
+         */
+        public static final String ETA_WEIGHTING = "ch.eta_weighting";
     }
 
     /**

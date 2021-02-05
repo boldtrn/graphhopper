@@ -106,7 +106,7 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
     // negative but increasing to avoid clash with custom created OSM files
     private long newUniqueOsmId = -Long.MAX_VALUE;
     private ElevationProvider eleProvider = ElevationProvider.NOOP;
-    private File osmFile;
+    protected File osmFile;
     private Date osmDataDate;
     private final IntsRef tempRelFlags;
     private final TurnCostStorage tcs;
@@ -444,7 +444,7 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
     }
 
     // TODO remove this ugly stuff via better preprocessing phase! E.g. putting every tags etc into a helper file!
-    double getTmpLatitude(int id) {
+    protected double getTmpLatitude(int id) {
         if (id == EMPTY_NODE)
             return Double.NaN;
         if (id < TOWER_NODE) {
@@ -460,7 +460,7 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
             return Double.NaN;
     }
 
-    double getTmpLongitude(int id) {
+    protected double getTmpLongitude(int id) {
         if (id == EMPTY_NODE)
             return Double.NaN;
         if (id < TOWER_NODE) {
