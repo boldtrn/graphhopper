@@ -162,6 +162,10 @@ public class Router {
         FlexiblePathCalculator pathCalculator = createFlexiblePathCalculator(queryGraph, profile, roundTripAlgoOpts, disableLM);
 
         RoundTripRouting.Result result = RoundTripRouting.calcPaths(qResults, pathCalculator);
+
+        // Trigger Postprocessing
+        result.paths = postProcessPaths(result.paths);
+
         // we merge the different legs of the roundtrip into one response path
         ResponsePath responsePath = concatenatePaths(request, weighting, queryGraph, result.paths, getWaypoints(qResults));
         ghRsp.add(responsePath);
@@ -189,6 +193,9 @@ public class Router {
         if (result.paths.isEmpty())
             throw new RuntimeException("Empty paths for alternative route calculation not expected");
 
+        // Trigger Postprocessing
+        result.paths = postProcessPaths(result.paths);
+
         // each path represents a different alternative and we do the path merging for each of them
         PathMerger pathMerger = createPathMerger(request, weighting, queryGraph);
         for (Path path : result.paths) {
@@ -211,6 +218,9 @@ public class Router {
         QueryGraph queryGraph = QueryGraph.create(ghStorage, qResults);
         PathCalculator pathCalculator = createPathCalculator(queryGraph, profile, algoOpts, disableCH, disableLM);
         ViaRouting.Result result = ViaRouting.calcPaths(request.getPoints(), queryGraph, qResults, weighting.getFlagEncoder().getAccessEnc(), pathCalculator, request.getCurbsides(), forceCurbsides, request.getHeadings(), passThrough);
+
+        // Trigger Postprocessing
+        result.paths = postProcessPaths(result.paths);
 
         if (request.getPoints().size() != result.paths.size() + 1)
             throw new RuntimeException("There should be exactly one more point than paths. points:" + request.getPoints().size() + ", paths:" + result.paths.size());
@@ -420,5 +430,9 @@ public class Router {
             }
             lastPoint = point;
         }
+    }
+
+    protected List<Path> postProcessPaths(List<Path> paths) {
+        return paths;
     }
 }
