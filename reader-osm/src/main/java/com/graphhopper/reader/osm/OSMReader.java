@@ -566,7 +566,7 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
         return id;
     }
 
-    IntsRef updateFlagsForNode(IntsRef flags, long osmNodeId){
+    protected IntsRef updateFlagsForNode(IntsRef flags, long osmNodeId){
         return flags;
     }
 
