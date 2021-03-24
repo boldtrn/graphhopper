@@ -566,6 +566,10 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
         return id;
     }
 
+    protected IntsRef updateFlagsForNode(IntsRef flags, long osmNodeId){
+        return flags;
+    }
+
     /**
      * This method creates from an OSM way (via the osm ids) one or more edges in the graph.
      */
@@ -575,9 +579,13 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
         int firstNode = -1;
         int lastIndex = osmNodeIds.size() - 1;
         int lastInBoundsPillarNode = -1;
+        IntsRef tmpFlags = flags;
         try {
             for (int i = 0; i < osmNodeIds.size(); i++) {
                 long osmNodeId = osmNodeIds.get(i);
+
+                tmpFlags = updateFlagsForNode(tmpFlags, osmNodeId);
+
                 int tmpNode = getNodeMap().get(osmNodeId);
                 if (tmpNode == EMPTY_NODE)
                     continue;
@@ -597,9 +605,10 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
                         tmpNode = -tmpNode - 3;
                         if (pointList.getSize() > 1 && firstNode >= 0) {
                             // TOWER node
-                            newEdges.add(addEdge(firstNode, tmpNode, pointList, flags, wayOsmId));
+                            newEdges.add(addEdge(firstNode, tmpNode, pointList, tmpFlags, wayOsmId));
                             pointList.clear();
                             pointList.add(nodeAccess, tmpNode);
+                            tmpFlags = flags;
                         }
                         firstNode = tmpNode;
                         lastInBoundsPillarNode = -1;
@@ -635,17 +644,19 @@ public class OSMReader implements DataReader, TurnCostParser.ExternalInternalMap
                         }
 
                         int newEndNode = -handlePillarNode(lastGHNodeId, lastOsmNodeId, pointList, true) - 3;
-                        newEdges.add(addEdge(firstNode, newEndNode, pointList, flags, wayOsmId));
+                        newEdges.add(addEdge(firstNode, newEndNode, pointList, tmpFlags, wayOsmId));
                         pointList.clear();
                         pointList.add(nodeAccess, newEndNode);
                         firstNode = newEndNode;
+                        tmpFlags = flags;
                     }
 
                     pointList.add(nodeAccess, tmpNode);
                     if (firstNode >= 0) {
-                        newEdges.add(addEdge(firstNode, tmpNode, pointList, flags, wayOsmId));
+                        newEdges.add(addEdge(firstNode, tmpNode, pointList, tmpFlags, wayOsmId));
                         pointList.clear();
                         pointList.add(nodeAccess, tmpNode);
+                        tmpFlags = flags;
                     }
                     firstNode = tmpNode;
                 }
